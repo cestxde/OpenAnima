@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QTranslator, QLocale
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QStyle, QSystemTrayIcon
 
@@ -127,6 +127,32 @@ def apply_control_panel_startup_state(ui_config):
     else:
         show_control_panel()
 
+def init_localization(app: QApplication, ui_config: dict) -> QTranslator | None:
+    """Detects system language or loads user preference, then applies QTranslator."""
+    chosen_lang = ui_config.get("language")
+    
+    if not chosen_lang:
+        ui_langs = QLocale.system().uiLanguages()
+        if ui_langs:
+            chosen_lang = ui_langs[0].split("-")[0]
+        else:
+            chosen_lang = "en"
+
+    translator = QTranslator()
+    qm_name = f"app_{chosen_lang}.qm"
+    qm_path = Path(__file__).parent / "i18n" / qm_name
+
+    if qm_path.exists():
+        if translator.load(str(qm_path)):
+            app.installTranslator(translator)
+            log_info(f"Language set to '{chosen_lang}'. Translation loaded successfully.")
+            return translator  # Keep reference alive
+        else:
+            log_warning(f"Failed to load translation file: {qm_name}")
+    else:
+        log_info(f"No translation file found for '{chosen_lang}'. Using default native strings.")
+        
+    return None
 
 def main():
     configure_logging()
@@ -141,6 +167,9 @@ def main():
         import_gif_to_assets(DEFAULT_GIF, reuse_existing=True)
 
     app = QApplication(sys.argv)
+
+    _translator = init_localization(app, ui_config) # Keep _translator alive
+
     app.setQuitOnLastWindowClosed(False)
     app.setStyle("Fusion")
     app.setStyleSheet(DARK_STYLE)

@@ -314,6 +314,17 @@ Requirements:
 pip install -r requirements.txt
 python main.py
 ```
+### Localization
+The application supports internationalization (i18n) using Qt's translation system.
+
+Updating Translations
+If you modify any user-facing strings in the Python source code (using self.tr()), you need to update and recompile the translation files before running or building the app.
+
+An automated script is provided to scan the codebase, update the source .ts XML files, and compile them into binary .qm files:
+
+```bash
+python tools/update_translations.py
+```
 
 ---
 
