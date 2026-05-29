@@ -1,9 +1,44 @@
 import sys
+from pathlib import Path
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QCheckBox, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt, QLocale
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import (
+    QCheckBox, QGroupBox, QLabel, QPushButton, 
+    QVBoxLayout, QWidget, QComboBox, QHBoxLayout
+)
 
 from ...runtime.startup import set_startup_enabled, startup_enabled
+
+
+def discover_available_languages() -> list[tuple[str, str, str]]:
+    """
+    Scans i18n directory and returns a list of tuples: 
+    (lang_code, display_name, svg_path_str_or_empty)
+    """
+    i18n_dir = Path(__file__).parent.parent.parent / "i18n"
+    
+    en_svg = i18n_dir / "en.svg"
+    en_icon_path = str(en_svg) if en_svg.exists() else ""
+    languages = [("en", "English", en_icon_path)]
+    
+    if not i18n_dir.exists():
+        return languages
+
+    for qm_file in i18n_dir.glob("app_*.qm"):
+        lang_code = qm_file.stem.split("_")[1]
+        if lang_code == "en":
+            continue
+            
+        locale = QLocale(lang_code)
+        native_name = locale.nativeLanguageName().capitalize()
+        
+        svg_file = i18n_dir / f"{lang_code}.svg"
+        icon_path = str(svg_file) if svg_file.exists() else ""
+        
+        languages.append((lang_code, native_name, icon_path))
+        
+    return languages
 
 
 def build_settings_page(panel):
@@ -42,6 +77,45 @@ def build_settings_page(panel):
             panel.startup_check.setChecked(startup_enabled())
             panel.startup_check.toggled.connect(set_startup_enabled)
     app_layout.addWidget(panel.startup_check)
+
+    lang_layout = QHBoxLayout()
+    lang_label = QLabel("Language:")
+    
+    panel.language_combo = QComboBox()
+    panel.language_combo.setMinimumWidth(200)
+    
+    i18n_dir = Path(__file__).parent.parent.parent / "i18n"
+    globe_svg = i18n_dir / "globe.svg"
+    
+    if globe_svg.exists():
+        panel.language_combo.addItem(QIcon(str(globe_svg)), "Auto", "")
+    else:
+        panel.language_combo.addItem("Auto", "")
+
+    available_langs = discover_available_languages()
+    for code, display, icon_path in available_langs:
+        if icon_path:
+            panel.language_combo.addItem(QIcon(icon_path), display, code)
+        else:
+            panel.language_combo.addItem(display, code)
+        
+    from ...runtime.config import load_config_data
+    
+    try:
+        current_lang = load_config_data().get("ui", {}).get("language", "")
+    except Exception:
+        current_lang = ""
+            
+    index = panel.language_combo.findData(current_lang)
+    if index >= 0:
+        panel.language_combo.setCurrentIndex(index)
+        
+    panel.language_combo.currentIndexChanged.connect(panel.change_language)
+    
+    lang_layout.addWidget(lang_label)
+    lang_layout.addWidget(panel.language_combo, 0, Qt.AlignLeft)
+    lang_layout.addStretch()
+    app_layout.addLayout(lang_layout)
 
     recovery_group = QGroupBox("Recovery")
     recovery_layout = QVBoxLayout(recovery_group)

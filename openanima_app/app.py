@@ -138,6 +138,10 @@ def init_localization(app: QApplication, ui_config: dict) -> QTranslator | None:
         else:
             chosen_lang = "en"
 
+    if chosen_lang == "en":
+        log_info("Language set to 'en'. Using default native strings.")
+        return None
+
     translator = QTranslator()
     qm_name = f"app_{chosen_lang}.qm"
     qm_path = Path(__file__).parent / "i18n" / qm_name

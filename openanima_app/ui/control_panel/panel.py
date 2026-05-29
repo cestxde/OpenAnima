@@ -693,3 +693,42 @@ class ControlPanel(QWidget):
             return
 
         event.ignore()
+
+    def change_language(self, index):
+        """Handles manual language selection and updates the configuration file."""
+        selected_lang = self.language_combo.itemData(index)
+        if selected_lang is None:
+            return
+
+        from ...runtime.config import load_config_data, atomic_write_json
+        from ...runtime import state
+        from PySide6.QtWidgets import QMessageBox
+        
+        try:
+            config_data = load_config_data()
+        except Exception:
+            config_data = {}
+
+        if "ui" not in config_data:
+            config_data["ui"] = {}
+
+        if config_data["ui"].get("language") == selected_lang:
+            return
+
+        config_data["ui"]["language"] = selected_lang
+
+        if hasattr(state, "UI_CONFIG") and isinstance(state.UI_CONFIG, dict):
+            state.UI_CONFIG["language"] = selected_lang
+
+        try:
+            atomic_write_json(CONFIG_PATH, config_data)
+            log_info(f"Language changed to: '{selected_lang or 'System Default'}'. Restart required.")
+            
+            QMessageBox.information(
+                self,
+                "Language Changed",
+                "Language settings have been updated. Please restart the application to apply the changes."
+            )
+                
+        except Exception as e:
+            log_warning(f"Failed to save language change: {e}")
