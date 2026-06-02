@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QTimer, QTranslator, QLocale
+from PySide6.QtCore import QCoreApplication, QTimer, QTranslator, QLocale
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QStyle, QSystemTrayIcon
 
@@ -53,11 +53,11 @@ def create_tray_icon(app, app_icon):
     tray.setToolTip("OpenAnima")
 
     menu = QMenu()
-    show_action = QAction("Show Control Panel", menu)
-    show_overlays_action = QAction("Show all overlays", menu)
-    disable_click_action = QAction("Disable Click-Through Mode for all", menu)
-    center_action = QAction("Bring all overlays to center", menu)
-    exit_action = QAction("Exit", menu)
+    show_action = QAction(QCoreApplication.translate("TrayMenu", "Show Control Panel"), menu)
+    show_overlays_action = QAction(QCoreApplication.translate("TrayMenu", "Show all overlays"), menu)
+    disable_click_action = QAction(QCoreApplication.translate("TrayMenu", "Disable Click-Through Mode for all"), menu)
+    center_action = QAction(QCoreApplication.translate("TrayMenu", "Bring all overlays to center"), menu)
+    exit_action = QAction(QCoreApplication.translate("TrayMenu", "Exit"), menu)
     show_action.triggered.connect(show_control_panel)
     show_overlays_action.triggered.connect(lambda: run_tray_recovery_action(show_all_overlays))
     disable_click_action.triggered.connect(lambda: run_tray_recovery_action(disable_click_through_for_all))
