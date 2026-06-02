@@ -143,7 +143,7 @@ def init_localization(app: QApplication, ui_config: dict) -> QTranslator | None:
         return None
 
     translator = QTranslator()
-    qm_name = f"app_{chosen_lang}.qm"
+    qm_name = f"{chosen_lang}.qm"
     qm_path = Path(__file__).parent / "i18n" / qm_name
 
     if qm_path.exists():

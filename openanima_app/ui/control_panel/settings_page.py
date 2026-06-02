@@ -25,8 +25,8 @@ def discover_available_languages() -> list[tuple[str, str, str]]:
     if not i18n_dir.exists():
         return languages
 
-    for qm_file in i18n_dir.glob("app_*.qm"):
-        lang_code = qm_file.stem.split("_")[1]
+    for qm_file in i18n_dir.glob("*.qm"):
+        lang_code = qm_file.stem
         if lang_code == "en":
             continue
             

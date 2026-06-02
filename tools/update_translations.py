@@ -9,12 +9,8 @@ def main():
     app_dir = project_root / "openanima_app"
     i18n_dir = app_dir / "i18n"
 
-    # Supported language codes
-    languages = ["ru"]
-
     print("Starting source code scan...")
 
-    # Recursively find all Python source files in the application package
     py_files = [str(p) for p in app_dir.rglob("*.py")]
 
     if not py_files:
@@ -25,20 +21,42 @@ def main():
 
     i18n_dir.mkdir(parents=True, exist_ok=True)
 
+    # Automatically detect languages based on existing .ts files
+    ts_files = list(i18n_dir.glob("*.ts"))
+
+    # If no .ts files exist, stop execution with a helpful message
+    if not ts_files:
+        print(f"\nNo translation files (.ts) found in: {i18n_dir}")
+        print(
+            "To add a new language, please create a '<lang_code>.ts' file inside that directory."
+        )
+        print("Example: Create 'ru.ts' for Russian translation.")
+        sys.exit(0)
+
     # Find the directory where the current Python executable is located (.venv/Scripts/)
-    # This ensures subprocess can find pyside6 uilities without relying on global PATH
     venv_bin_dir = Path(sys.executable).parent
 
     # Resolve absolute paths to the utilities based on the platform
-    # On Windows they are .exe files, on Linux/macOS they are binary scripts
     exe_suffix = ".exe" if sys.platform == "win32" else ""
     lupdate_path = str(venv_bin_dir / f"pyside6-lupdate{exe_suffix}")
     lrelease_path = str(venv_bin_dir / f"pyside6-lrelease{exe_suffix}")
 
-    # Process update and compilation workflows for each configured language
-    for lang in languages:
-        ts_file = i18n_dir / f"app_{lang}.ts"
-        qm_file = i18n_dir / f"app_{lang}.qm"
+    MINIMAL_TS_XML = (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<!DOCTYPE TS>\n'
+        '<TS version="2.1">\n'
+        '</TS>\n'
+    )
+
+    # Process update and compilation workflows for each discovered language file
+    for ts_file in sorted(ts_files):
+        lang = ts_file.stem  # Gets the filename without extension (e.g., 'ru')
+        qm_file = ts_file.with_suffix(".qm")
+
+        # FIX: If the .ts file is completely empty (0 bytes), initialize it with valid XML structure
+        if ts_file.exists() and ts_file.stat().st_size == 0:
+            ts_file.write_text(MINIMAL_TS_XML, encoding="utf-8")
+            print(f"[{lang.upper()}] Initialized empty file with base XML structure.")
 
         print(f"\n[{lang.upper()}] Processing translation files...")
 
